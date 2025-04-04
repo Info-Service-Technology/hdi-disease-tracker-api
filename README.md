@@ -41,3 +41,29 @@ To provide a publicly accessible data API for analysis, visualization, and monit
 
 5. Access the automatic API documentation:
   http://localhost:8000/docs
+
+## 📊 Query Parameters
+
+The `/dengue` endpoint supports the following optional filters:
+
+| Parameter               | Description                                      |
+|-------------------------|--------------------------------------------------|
+| `agravo`                | Type of disease reported                         |
+| `sexo`                  | Patient's gender                                 |
+| `gestante`              | Pregnancy status                                 |
+| `raca`                  | Race/color                                       |
+| `uf_notificacao`        | Notification state                               |
+| `municipio_notificacao` | Notification city                                |
+| `unidade_saude`         | Health unit that reported the case               |
+| `uf_residencia`         | State of residence                               |
+| `municipio_residencia`  | City of residence                                |
+| `pais_residencia`       | Country of residence                             |
+| `data_notificacao`      | Notification date (format: `YYYY-MM-DD`)        |
+| `data_inicio_sintomas`  | Symptom onset date (format: `YYYY-MM-DD`)       |
+
+## 📌 Pagination
+
+| Parameter | Description                                  |
+|-----------|----------------------------------------------|
+| `skip`    | Number of records to skip (default: `0`)     |
+| `limit`   | Maximum number of records per page (default: `10`) |

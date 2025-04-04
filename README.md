@@ -17,10 +17,10 @@ To provide a publicly accessible data API for analysis, visualization, and monit
 ## 📦 Running Locally
 
 1. Clone the repository:
-   ```bash
-   git clone https://github.com/your-username/Health-Data-Insights-Petropolis.git
-   cd Health-Data-Insights-Petropolis
-   ```
+  ```bash
+  git clone https://github.com/your-username/Health-Data-Insights-Petropolis.git
+  cd Health-Data-Insights-Petropolis
+  ```
 
 2. Create and activate a virtual environment:
   ```bash

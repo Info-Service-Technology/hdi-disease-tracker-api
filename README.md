@@ -1,4 +1,4 @@
-# Health Data Insights - Petrópolis (RJ)
+# <img src="https://i.imgur.com/gl5r9LJ.png" alt="Logo" width="30" style="margin-right: 8px; vertical-align: middle;"/> Health Data Insights - Petrópolis (RJ)
 
 This repository contains a **FastAPI**-based API that exposes processed **dengue** case data for the municipality of **Petrópolis, Rio de Janeiro, Brazil**.
 
@@ -18,8 +18,8 @@ To provide a publicly accessible data API for analysis, visualization, and monit
 
 1. Clone the repository:
   ```bash
-  git clone https://github.com/your-username/Health-Data-Insights-Petropolis.git
-  cd Health-Data-Insights-Petropolis
+  git clone https://github.com/PedroDutra86/hdi-disease-tracker-api.git
+  cd hdi-disease-tracker-api
   ```
 
 2. Create and activate a virtual environment:
@@ -41,6 +41,48 @@ To provide a publicly accessible data API for analysis, visualization, and monit
 
 5. Access the automatic API documentation:
   http://localhost:8000/docs
+
+## 🐳 Docker Setup
+
+You can run the API using Docker without manually installing any dependencies.
+The Docker image for this project is available on [Docker Hub](https://hub.docker.com/repository/docker/pedrodutra86/hdi-api/general).
+
+You can pull the image using:
+  ```bash
+  docker pull pedrodutra86/hdi-api
+  ```
+
+### Prerequisites
+
+- Docker and Docker Compose installed
+- Docker Desktop running
+
+### Build and run the container
+
+1. Clone the repository:
+  ```bash
+  git clone https://github.com/PedroDutra86/hdi-disease-tracker-api.git
+  cd hdi-disease-tracker-api
+  ```
+
+2. Build and start the API:
+  ```bash
+  docker-compose up --build
+  ```
+
+3. Access the API documentation at: http://localhost:8000/docs
+
+### Updating the data
+
+To update the API data:
+
+1. Replace the CSV file in api/data/ with the new file.
+2. Restart the container:
+  ```bash
+  docker-compose restart
+  ```
+
+The API will automatically use the updated CSV file.
 
 ## 📊 Query Parameters
 
@@ -78,21 +120,21 @@ To run the tests, follow the steps below:
 
 1. **Install the project dependencies:**
 
-    If you haven't done this already, install the necessary dependencies with the command:
+  If you haven't done this already, install the necessary dependencies with the command:
 
-    ```bash
-    pip install -r requirements.txt
-    ```
+  ```bash
+  pip install -r requirements.txt
+  ```
 
 2. **Run the tests:**
 
-    To run the tests, execute the following command:
+  To run the tests, execute the following command:
 
-    ```bash
-    pytest
-    ```
+  ```bash
+  pytest
+  ```
 
-    pytest will automatically search for test files in the `tests/` folder and execute them.
+  pytest will automatically search for test files in the `tests/` folder and execute them.
 
 ### Test Structure
 

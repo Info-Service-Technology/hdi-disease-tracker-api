@@ -13,6 +13,8 @@ To provide a publicly accessible data API for analysis, visualization, and monit
 - Pandas
 - Uvicorn
 - CORS Middleware
+- Pytest
+- Docker & Docker Compose
 
 ## 📦 Running Locally
 

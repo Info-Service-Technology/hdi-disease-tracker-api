@@ -12,3 +12,7 @@ app.add_middleware(
 )
 
 app.include_router(dengue.router)
+
+@app.get("/")
+def read_root():
+    return {"message": "HDI API is running"}

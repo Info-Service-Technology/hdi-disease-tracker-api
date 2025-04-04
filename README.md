@@ -67,3 +67,56 @@ The `/dengue` endpoint supports the following optional filters:
 |-----------|----------------------------------------------|
 | `skip`    | Number of records to skip (default: `0`)     |
 | `limit`   | Maximum number of records per page (default: `10`) |
+
+## Test Documentation
+
+This project includes automated tests to ensure the API is functioning correctly. The tests are performed using the **pytest** framework and are based on the API routes implemented.
+
+### How to Run Tests
+
+To run the tests, follow the steps below:
+
+1. **Install the project dependencies:**
+
+    If you haven't done this already, install the necessary dependencies with the command:
+
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+2. **Run the tests:**
+
+    To run the tests, execute the following command:
+
+    ```bash
+    pytest
+    ```
+
+    pytest will automatically search for test files in the `tests/` folder and execute them.
+
+### Test Structure
+
+The tests are located in the `tests/` folder. Each test file follows the convention `test_<feature_name>.py`. Currently, the following tests are implemented:
+
+#### Tests for the `/dengue` endpoint
+
+- **test_read_root**: Verifies if the root route (`/`) returns the expected response with status 200 and the message "HDI API is running".
+- **test_get_dengue_data**: Verifies if the `/dengue` endpoint with `limit` and `skip` parameters returns the data correctly.
+- **test_filter_by_city**: Verifies if the filter by city in the `/dengue` endpoint works correctly.
+- **test_limit_and_skip**: Verifies if the `limit` and `skip` parameters work properly when paginating the results.
+
+#### Tests for the `/dengue` endpoint with filter parameters
+
+- **test_skip_greater_than_total**: Verifies the behavior when the `skip` value is greater than the total number of available records. The response is expected to be an empty list.
+  
+### Test Coverage
+
+Currently, the tests cover the main features of the `/dengue` endpoint, such as filter parameters, pagination, and data validation.
+
+### Running Specific Tests
+
+If you want to run a specific test, you can use the following command:
+
+  ```bash
+  pytest -k <test_name>
+  ```

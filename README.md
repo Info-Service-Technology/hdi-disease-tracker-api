@@ -164,3 +164,12 @@ If you want to run a specific test, you can use the following command:
   ```bash
   pytest -k <test_name>
   ```
+
+## ☁️ Deployment
+
+This API is deployed on [Render](https://hdi-disease-tracker-api.onrender.com/). It uses Docker to containerize the application.
+
+To deploy your own version:
+- Fork this repository
+- Connect to Render
+- Use Docker for deployment

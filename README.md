@@ -68,7 +68,7 @@ The `/dengue` endpoint supports the following optional filters:
 | `skip`    | Number of records to skip (default: `0`)     |
 | `limit`   | Maximum number of records per page (default: `10`) |
 
-## Test Documentation
+## 🛡️ Test Documentation
 
 This project includes automated tests to ensure the API is functioning correctly. The tests are performed using the **pytest** framework and are based on the API routes implemented.
 

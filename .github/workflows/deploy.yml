@@ -28,7 +28,14 @@ jobs:
       uses: aws-actions/amazon-ecr-login@v2
       with:
         region: ${{ secrets.AWS_REGION }}
-
+    - name: Ensure ECR repository exists
+      run: |
+        aws ecr describe-repositories \
+          --repository-names ${{ secrets.EB_APPLICATION_NAME }} \
+          --region ${{ secrets.AWS_REGION }} \
+          || aws ecr create-repository \
+          --repository-name ${{ secrets.EB_APPLICATION_NAME }} \
+          --region ${{ secrets.AWS_REGION }}
     - name: Build Docker image
       run: |
         docker build -t ${{ steps.login-ecr.outputs.registry }}/${{ secrets.EB_APPLICATION_NAME }}:latest .
@@ -51,4 +58,3 @@ jobs:
         aws-region: ${{ secrets.AWS_REGION }}
         deployment_package: deploy.zip
 
-        

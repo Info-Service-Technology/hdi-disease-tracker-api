@@ -14,3 +14,4 @@ EXPOSE 8080
 # Usar variável de ambiente PORT para definir a porta onde o Uvicorn vai escutar
 CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}"]
 
+HEALTHCHECK --interval=30s --timeout=5s CMD curl -f http://localhost:${PORT:-8080}/health || exit 1

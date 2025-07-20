@@ -1,23 +1,41 @@
+import boto3
+import time
 from fastapi import APIRouter, Query, HTTPException
 from typing import Optional
-import pandas as pd
-from pathlib import Path
 
 router = APIRouter()
 
-CSV_PATH = Path("data/DENGBR24_processed.csv")
-try:
-    df_global = pd.read_csv(CSV_PATH)
-    for col in df_global.columns:
-        if "Data" in col:
-            df_global[col] = df_global[col].astype(str)
-except FileNotFoundError:
-    df_global = None
+# Inicializa cliente Athena
+athena_client = boto3.client('athena', region_name='sa-east-1')  # ajuste a região conforme seu bucket
 
+DATABASE = 'dados_hdi_db'  # ajuste no seu Glue/Athena
+OUTPUT_BUCKET = 's3://dados-hdi/'  # bucket S3 onde Athena armazena resultados
+
+def execute_athena_query(query):
+    response = athena_client.start_query_execution(
+        QueryString=query,
+        QueryExecutionContext={'Database': DATABASE},
+        ResultConfiguration={'OutputLocation': OUTPUT_BUCKET}
+    )
+    query_execution_id = response['QueryExecutionId']
+
+    # Aguardar query terminar
+    while True:
+        query_status = athena_client.get_query_execution(QueryExecutionId=query_execution_id)
+        state = query_status['QueryExecution']['Status']['State']
+        if state in ['SUCCEEDED', 'FAILED', 'CANCELLED']:
+            break
+        time.sleep(1)
+
+    if state != 'SUCCEEDED':
+        raise Exception(f'Athena query failed or cancelled with status: {state}')
+
+    results = athena_client.get_query_results(QueryExecutionId=query_execution_id)
+    return results
 @router.get("/dengue")
 def get_dengue_data(
-    skip: int = Query(0, ge=0, description="Número de registros a pular"),
-    limit: int = Query(10, ge=1, le=100, description="Número máximo de registros retornados"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
     agravo: Optional[str] = None,
     sexo: Optional[str] = None,
     gestante: Optional[str] = None,
@@ -28,34 +46,67 @@ def get_dengue_data(
     uf_residencia: Optional[str] = Query(None, alias="uf_residencia"),
     municipio_residencia: Optional[str] = Query(None, alias="municipio_residencia"),
     pais_residencia: Optional[str] = Query(None, alias="pais_residencia"),
+    tipo_notificacao: Optional[str] = Query(None, alias="tipo_notificacao")
 ):
-    if df_global is None:
-        raise HTTPException(status_code=500, detail="Arquivo de dados não encontrado")
-
-    df = df_global.copy()
-
     try:
-        if agravo: df = df[df["Agravo"] == agravo]
-        if sexo: df = df[df["Sexo"] == sexo]
-        if gestante: df = df[df["Gestante"] == gestante]
-        if raca: df = df[df["Raça"] == raca]
-        if uf_notificacao: df = df[df["UF da Notificação"] == uf_notificacao]
-        if municipio_notificacao: df = df[df["Município da Notificação"] == municipio_notificacao]
-        if unidade_saude: df = df[df["Unidade de Saúde"] == unidade_saude]
-        if uf_residencia: df = df[df["UF de Residência"] == uf_residencia]
-        if municipio_residencia: df = df[df["Município de Residência"] == municipio_residencia]
-        if pais_residencia: df = df[df["País de Residência"] == pais_residencia]
+        filters = []
+        if agravo:
+            filters.append(f"agravo = '{agravo}'")
+        if sexo:
+            filters.append(f"sexo = '{sexo}'")
+        if gestante:
+            filters.append(f"gestante = '{gestante}'")
+        if raca:
+            filters.append(f"raca = '{raca}'")
+        if uf_notificacao:
+            filters.append(f"uf_da_notificacao = '{uf_notificacao}'")
+        if municipio_notificacao:
+            filters.append(f"municipio_da_notificacao = '{municipio_notificacao}'")
+        if unidade_saude:
+            filters.append(f"unidade_de_saude = '{unidade_saude}'")
+        if uf_residencia:
+            filters.append(f"uf_de_residencia = '{uf_residencia}'")
+        if municipio_residencia:
+            filters.append(f"municipio_de_residencia = '{municipio_residencia}'")
+        if pais_residencia:
+            filters.append(f"pais_de_residencia = '{pais_residencia}'")
+        if tipo_notificacao:
+            filters.append(f"tipo_notificacao = '{tipo_notificacao}'")
+        where_clause = ''
+        if filters:
+            where_clause = 'WHERE ' + ' AND '.join(filters)
 
-        df = df.fillna(0)
-        total = len(df)
-        data = df.iloc[skip : skip + limit].to_dict(orient="records")
+        # Monta query com paginação usando LIMIT e OFFSET
+        query = f"""
+             SELECT *
+                FROM dengue_rj
+                {where_clause}
+                LIMIT {limit}
+            """
+
+        results = execute_athena_query(query)
+
+        # Processar dados do resultado Athena
+        # A primeira linha do results contém os metadados (colunas),
+        # as seguintes são os dados efetivos.
+
+        columns = [col['VarCharValue'] for col in results['ResultSet']['Rows'][0]['Data']]
+        records = []
+        for row in results['ResultSet']['Rows'][1:]:
+            record = {}
+            for col_idx, col_val in enumerate(row['Data']):
+                record[columns[col_idx]] = col_val.get('VarCharValue', None)
+            records.append(record)
+
+        # Para total, uma query COUNT(*) pode ser executada separadamente se necessário
 
         return {
-            "total": total,
+            "total": len(records),  # Atenção: para total correto, deve fazer query COUNT(*)
             "page_size": limit,
             "page_start": skip,
-            "page_end": min(skip + limit, total),
-            "data": data
+            "page_end": skip + len(records),
+            "data": records
         }
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

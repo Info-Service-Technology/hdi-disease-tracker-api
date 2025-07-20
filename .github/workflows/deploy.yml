@@ -1,61 +1,104 @@
-name: CI/CD to AWS Elastic Beanstalk
+name: CI/CD Pipeline for FastAPI (HDI Disease Tracker API)
 
 on:
   push:
     branches:
+      - develop
+      - staging
       - main
 
 jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
+    build-and-test:
+        name: Build and Test
+        runs-on: ubuntu-latest
 
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+        steps:
+        - name: Checkout code
+          uses: actions/checkout@v3
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
+        - name: Set up Python
+          uses: actions/setup-python@v4
+          with:
+            python-version: '3.12'
 
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ secrets.AWS_REGION }}
+        - name: Install dependencies
+          run: |
+            python -m pip install --upgrade pip
+            python -m venv venv
+            source venv/bin/activate
+            pip install -r requirements.txt
 
-    - name: Log in to Amazon ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v2
-      with:
-        region: ${{ secrets.AWS_REGION }}
-    - name: Ensure ECR repository exists
-      run: |
-        aws ecr describe-repositories \
-          --repository-names ${{ secrets.EB_APPLICATION_NAME }} \
-          --region ${{ secrets.AWS_REGION }} \
-          || aws ecr create-repository \
-          --repository-name ${{ secrets.EB_APPLICATION_NAME }} \
-          --region ${{ secrets.AWS_REGION }}
-    - name: Build Docker image
-      run: |
-        docker build -t ${{ steps.login-ecr.outputs.registry }}/${{ secrets.EB_APPLICATION_NAME }}:latest .
+        - name: Run tests
+          run: |
+            source venv/bin/activate
+            pytest tests --cov=app --cov-report=xml --cov-report=html
+        
+        - name: Build Docker Image
+          run: |
+                docker build -t hdi-disease-tracker-api:latest .                
 
-    - name: Push Docker image to Amazon ECR
-      run: |
-        docker push ${{ steps.login-ecr.outputs.registry }}/${{ secrets.EB_APPLICATION_NAME }}:latest
+    deploy-to-develop:
+        name: Deploy to Development (Elastic Beanstalk)
+        needs: build-and-test
+        if: github.ref == 'refs/heads/develop'
+        runs-on: ubuntu-latest
 
-    - name: Zip application for Elastic Beanstalk
-      run: zip -r deploy.zip . -x '*.git*' '*.github*' 'deploy.zip'
+        steps:
+        - name: Checkout code
+          uses: actions/checkout@v3
 
-    - name: Deploy to Elastic Beanstalk
-      uses: einaregilsson/beanstalk-deploy@v22
-      with:
-        aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        application_name: ${{ secrets.EB_APPLICATION_NAME }}
-        environment_name: ${{ secrets.EB_ENVIRONMENT_NAME }}
-        version_label: ${{ github.sha }}
-        region: ${{ secrets.AWS_REGION }}
-        deployment_package: deploy.zip
-        use_existing_version_if_available: true
+        - name: Configure AWS credentials
+          uses: aws-actions/configure-aws-credentials@v3
+          with:
+            aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+            aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            aws-region: ${{ secrets.AWS_REGION }}
 
+        - name: Deploy to Development 
+          run: |
+            chmod +x infra/deploy-dev.sh
+            ./infra/deploy-dev.sh
+
+
+    deploy-to-staging:
+        name: Deploy to Staging (Elastic Beanstalk)
+        needs: build-and-test
+        if: github.ref == 'refs/heads/staging'
+        runs-on: ubuntu-latest
+
+        steps:
+        - name: Checkout code
+          uses: actions/checkout@v3
+
+        - name: Configure AWS credentials
+          uses: aws-actions/configure-aws-credentials@v3
+          with:
+            aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+            aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            aws-region: ${{ secrets.AWS_REGION }}
+
+        - name: Deploy to Staging 
+          run: |
+            chmod +x infra/deploy-staging.sh
+            ./infra/deploy-staging.sh
+    deploy-to-production:
+        name: Deploy to Production (Elastic Beanstalk)
+        needs: build-and-test
+        if: github.ref == 'refs/heads/main'
+        runs-on: ubuntu-latest
+
+        steps:
+        - name: Checkout code
+          uses: actions/checkout@v3
+
+        - name: Configure AWS credentials
+          uses: aws-actions/configure-aws-credentials@v3
+          with:
+            aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+            aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            aws-region: ${{ secrets.AWS_REGION }}
+
+        - name: Deploy to Production 
+          run: |
+            chmod +x infra/deploy-prod.sh
+            ./infra/deploy-prod.sh  
